@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gran Rifa de Halloween 🎃</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        spooky: {
+                            bg: '#0c0714',
+                            card: '#160d27',
+                            border: '#2a1745',
+                            orange: '#ff6b00',
+                            orangeGlow: '#ff851b',
+                            purple: '#9d4edd',
+                            green: '#00ff66',
+                            greenGlow: '#39ff14',
+                            blood: '#e63946',
+                            gold: '#ffd700'
+                        }
+                    },
+                    fontFamily: {
+                        creep: ['Creepster', 'cursive', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'neon-orange': '0 0 15px rgba(255, 107, 0, 0.6), 0 0 30px rgba(255, 107, 0, 0.3)',
+                        'neon-green': '0 0 15px rgba(0, 255, 102, 0.6), 0 0 30px rgba(0, 255, 102, 0.3)',
+                        'neon-purple': '0 0 20px rgba(157, 78, 221, 0.7)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            background-color: #0c0714;
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(157, 78, 221, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 0, 0.1) 0%, transparent 40%);
+            min-height: 100vh;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Continuous Ambient Floating Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(3deg); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+            animation: float 5s ease-in-out 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 10px #ff6b00); }
+            50% { opacity: 1; filter: drop-shadow(0 0 25px #ff6b00); }
+        }
+        .spooky-title {
+            animation: pulse-glow 3s infinite ease-in-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0c0714;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a1745;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff6b00;
+        }
+
+        /* Grid Item Glow effect */
+        .ticket-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ticket-card.active-scan {
+            transform: scale(1.15) translateY(-5px);
+            background-color: #ff6b00 !important;
+            border-color: #ffd700 !important;
+            color: #000 !important;
+            box-shadow: 0 0 25px #ff6b00, 0 0 40px #ffd700;
+            z-index: 20;
+        }
+        .ticket-card.winner-card {
+            animation: winnerPulse 1s infinite alternate;
+            background: linear-gradient(135deg, #ff6b00, #ffd700) !important;
+            color: #000 !important;
+            border-color: #ffffff !important;
+        }
+
+        @keyframes winnerPulse {
+            0% { transform: scale(1.05); box-shadow: 0 0 20px #ff6b00; }
+            100% { transform: scale(1.2); box-shadow: 0 0 45px #00ff66, 0 0 30px #ffd700; }
+        }
+
+        /* Glassmorphic elements */
+        .glass-panel {
+            background: rgba(22, 13, 39, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(157, 78, 221, 0.2);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-spooky-orange selection:text-black">
+
+    <!-- Background Fog & Ghost Particles Canvas -->
+    <canvas id="bgCanvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-40"></canvas>
+
+    <div class="relative z-10 flex flex-col min-h-screen">
+
+        <!-- Header -->
+        <header class="py-6 px-4 border-b border-spooky-border glass-panel">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl animate-float">🎃</span>
+                    <div>
+                        <h1 class="font-creep text-3xl sm:text-5xl text-spooky-orange tracking-wider spooky-title drop-shadow-md">
+                            GRAN RIFA DE HALLOWEEN
+                        </h1>
+                        <p class="text-xs sm:text-sm text-spooky-purple font-medium tracking-widest uppercase">
+                            ¡Invoca a la suerte de ultratumba! 💀
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Quick Controls -->
+                <div class="flex items-center gap-3">
+                    <div class="bg-spooky-bg/80 border border-spooky-border px-4 py-2 rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-ticket text-spooky-green"></i>
+                        <span class="text-xs text-gray-400">Boletos Activos:</span>
+                        <span id="activeCount" class="font-bold text-spooky-green text-base">50</span>
+                    </div>
+                    <button id="soundToggle" onclick="toggleSound()" class="p-2.5 rounded-xl bg-spooky-card border border-spooky-border hover:border-spooky-orange text-gray-300 hover:text-spooky-orange transition">
+                        <i id="soundIcon" class="fa-solid fa-volume-high text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Layout -->
+        <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+            <!-- Sidebar: Controls & Options -->
+            <aside class="lg:col-span-1 space-y-6">
+                <!-- Draw Control Panel -->
+                <div class="glass-panel p-5 rounded-2xl border-spooky-border shadow-2xl relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-24 h-24 bg-spooky-orange/10 rounded-full blur-xl"></div>
+                    
+                    <h2 class="font-creep text-2xl text-spooky-orange mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-spooky-green text-xl"></i> Ritual del Sorteo
+                    </h2>
+
+                    <!-- Mode Selector -->
+                    <div class="mb-5">
+                        <label class="block text-xs text-gray-400 font-semibold mb-2 uppercase tracking-wider">Modo de Selección</label>
+                        <select id="drawMode" class="w-full bg-spooky-bg border border-spooky-border text-gray-200 text-sm rounded-xl p-3 focus:outline-none focus:border-spooky-orange transition cursor-pointer">
+                            <option value="scan">⚡ Matriz en Cadenas (Veloz)</option>
+                            <option value="roulette">🎡 Ruleta de Ultratumba</option>
+                            <option value="slot">🎰 Tragamonedas Macabro</option>
+                        </select>
+                    </div>
+
+                    <!-- Exclude winners checkbox -->
+                    <div class="mb-6 flex items-center justify-between bg-spooky-bg/50 p-3 rounded-xl border border-spooky-border/50">
+                        <label for="excludeWinners" class="text-xs text-gray-300 font-medium cursor-pointer flex items-center gap-2">
+                            <i class="fa-solid fa-user-slash text-spooky-purple"></i> Excluir ganadores previos
+                        </label>
+                        <input type="checkbox" id="excludeWinners" class="w-4 h-4 accent-spooky-orange rounded cursor-pointer" checked>
+                    </div>
+
+                    <!-- Main Action Button -->
+                    <button id="drawBtn" onclick="startDraw()" class="w-full group relative inline-flex items-center justify-center p-0.5 mb-2 overflow-hidden text-lg font-bold rounded-xl bg-gradient-to-br from-spooky-orange via-spooky-purple to-spooky-green group-hover:from-spooky-orange group-hover:to-spooky-green text-white shadow-neon-orange hover:shadow-neon-green transition-all duration-300 active:scale-95">
+                        <span class="relative w-full px-5 py-4 transition-all ease-in duration-75 bg-spooky-bg rounded-xl group-hover:bg-opacity-0 flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-ghost text-spooky-orange group-hover:text-black group-hover:rotate-12 transition-all"></i>
+                            <span class="font-creep text-2xl tracking-widest text-spooky-orange group-hover:text-black">¡INVOCAR GANADOR!</span>
+                        </span>
+                    </button>
+                    
+                    <button id="resetWinnersBtn" onclick="resetWinners()" class="w-full text-xs text-gray-400 hover:text-spooky-blood py-2 transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-rotate-right"></i> Reiniciar lista de ganadores
+                    </button>
+                </div>
+
+                <!-- Recent Winners Panel -->
+                <div class="glass-panel p-5 rounded-2xl border-spooky-border">
+                    <h3 class="font-creep text-xl text-spooky-green mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-trophy text-spooky-gold"></i> Ganadores</span>
+                        <span id="winnersCount" class="text-xs font-sans bg-spooky-green/20 text-spooky-green px-2 py-0.5 rounded-full">0</span>
+                    </h3>
+                    <div id="winnersList" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-sm">
+                        <p id="emptyWinnersText" class="text-xs text-gray-500 italic text-center py-4">Aún no hay ganadores invocados...</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Stage: Participant Tickets Grid / Roulette Container -->
+            <section class="lg:col-span-3 flex flex-col gap-4">
+
+                <!-- Search & Filters -->
+                <div class="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar por número o nombre..." oninput="filterTickets()" class="w-full bg-spooky-bg border border-spooky-border text-sm rounded-xl pl-9 pr-4 py-2 text-gray-200 focus:outline-none focus:border-spooky-purple">
+                    </div>
+                    
+                    <div class="flex items-center gap-2 text-xs text-gray-400 w-full sm:w-auto justify-end">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-spooky-card border border-spooky-border inline-block"></span> Disponible</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-spooky-green inline-block"></span> Escaneando</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-spooky-blood inline-block"></span> Premiado</span>
+                    </div>
+                </div>
+
+                <!-- Stage Viewport (Dynamic depending on mode) -->
+                <div class="glass-panel p-6 rounded-2xl flex-grow border-spooky-border min-h-[480px] flex flex-col relative overflow-hidden">
+                    
+                    <!-- Mode 1: Dynamic Grid (Default) -->
+                    <div id="gridStage" class="w-full h-full">
+                        <div id="ticketsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 max-h-[620px] overflow-y-auto p-1">
+                            <!-- Cards inserted via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Mode 2: Animated Canvas Roulette (Hidden initially) -->
+                    <div id="rouletteStage" class="hidden w-full h-full flex-col items-center justify-center relative">
+                        <div class="relative w-72 h-72 sm:w-96 sm:h-96">
+                            <!-- Pointer -->
+                            <div class="absolute -top-4 left-1/2 -translate-x-1/2 z-30 text-spooky-orange text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] animate-bounce">
+                                <i class="fa-solid fa-location-pin"></i>
+                            </div>
+                            <canvas id="rouletteCanvas" width="400" height="400" class="w-full h-full rounded-full border-4 border-spooky-orange shadow-neon-orange"></canvas>
+                        </div>
+                        <div id="rouletteSubtext" class="font-creep text-xl text-spooky-purple mt-4">¡Gira el disco maldito!</div>
+                    </div>
+
+                    <!-- Mode 3: Slot Machine (Hidden initially) -->
+                    <div id="slotStage" class="hidden w-full h-full flex flex-col items-center justify-center gap-6 py-12">
+                        <div class="flex items-center justify-center gap-3 sm:gap-6 bg-spooky-bg p-6 rounded-3xl border-4 border-spooky-border shadow-2xl relative">
+                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-spooky-orange text-black font-bold text-xs px-3 py-0.5 rounded-full uppercase tracking-widest">Tómbola Espeluznante</div>
+                            
+                            <!-- Slot Reel 1 (Number) -->
+                            <div class="w-24 h-36 sm:w-32 sm:h-44 bg-spooky-card rounded-2xl border-2 border-spooky-purple flex items-center justify-center overflow-hidden shadow-inner">
+                                <span id="slotNumber" class="font-creep text-5xl sm:text-7xl text-spooky-orange">???</span>
+                            </div>
+
+                            <!-- Divider -->
+                            <span class="text-3xl text-spooky-purple font-creep">:</span>
+
+                            <!-- Slot Reel 2 (Name Display) -->
+                            <div class="w-48 h-36 sm:w-72 sm:h-44 bg-spooky-card rounded-2xl border-2 border-spooky-green flex items-center justify-center px-4 text-center overflow-hidden shadow-inner">
+                                <span id="slotName" class="font-sans font-bold text-lg sm:text-2xl text-spooky-green line-clamp-2">¿Quién será?</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="py-4 text-center text-xs text-gray-500 border-t border-spooky-border/50 glass-panel">
+            Rifa de Halloween 👻 • {50 Participantes Seleccionados} • Que los espíritus decidan tu destino
+        </footer>
+    </div>
+
+    <!-- WINNER MODAL -->
+    <div id="winnerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-500">
+        <div id="modalContent" class="relative w-full max-w-lg bg-spooky-card border-2 border-spooky-orange rounded-3xl p-8 text-center shadow-neon-orange transform scale-90 transition-all duration-500 overflow-hidden">
+            
+            <!-- Spooky Background Decorations inside Modal -->
+            <div class="absolute -top-12 -left-12 text-7xl text-spooky-orange/10 pointer-events-none select-none">🎃</div>
+            <div class="absolute -bottom-12 -right-12 text-7xl text-spooky-purple/10 pointer-events-none select-none">🦇</div>
+
+            <!-- Modal Header -->
+            <div class="inline-block px-4 py-1 rounded-full bg-spooky-orange/20 border border-spooky-orange text-spooky-orange font-bold text-xs uppercase tracking-widest mb-3">
+                🎉 ¡Ganador Invocado! 🎉
+            </div>
+
+            <!-- Winner Number Badge -->
+            <div class="relative my-4 inline-block">
+                <div class="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-spooky-orange to-spooky-gold flex items-center justify-center shadow-neon-orange animate-bounce">
+                    <span id="modalWinnerNumber" class="font-creep text-6xl text-black">--</span>
+                </div>
+                <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black text-spooky-gold border border-spooky-gold text-xs px-3 py-0.5 rounded-full font-bold">NÚMERO</span>
+            </div>
+
+            <!-- Winner Name -->
+            <h2 id="modalWinnerName" class="text-3xl font-extrabold text-white mb-2 tracking-wide">
+                Nombre del Ganador
+            </h2>
+            <p class="text-sm text-spooky-green font-medium mb-6">
+                ¡Los espíritus de Halloween han bendecido este boleto! 👻✨
+            </p>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onclick="closeWinnerModal()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-spooky-orange hover:bg-spooky-orangeGlow text-black font-bold transition shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Aceptar
+                </button>
+                <button onclick="redrawFromModal()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-spooky-bg hover:bg-spooky-border text-gray-300 font-semibold border border-spooky-border transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Volver a Invocación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // 1. Participant Dataset
+        const rawParticipants = [
+            { num: 1, name: "Tato (Pago)" },
+            { num: 3, name: "Rodrigo Araya" },
+            { num: 5, name: "Salazar 9º" },
+            { num: 6, name: "Panna 9º" },
+            { num: 7, name: "Javier 9º" },
+            { num: 8, name: "Tato" },
+            { num: 9, name: "Gato 9º" },
+            { num: 10, name: "Salazar 9º" },
+            { num: 11, name: "Nana Araya" },
+            { num: 12, name: "Nana Araya" },
+            { num: 14, name: "Javier 9º" },
+            { num: 18, name: "Victoria" },
+            { num: 19, name: "Vinicio Ordóñez" },
+            { num: 20, name: "Javier 9º" },
+            { num: 21, name: "Diego" },
+            { num: 22, name: "Sophia Lindeman" },
+            { num: 23, name: "Javier" },
+            { num: 24, name: "Javier 9º" },
+            { num: 25, name: "Nidia Morales" },
+            { num: 26, name: "Sandra Araya" },
+            { num: 27, name: "Nidia Morales" },
+            { num: 29, name: "Victoria" },
+            { num: 33, name: "Diego" },
+            { num: 38, name: "Macho Nacho 9º" },
+            { num: 39, name: "Nidia Morales" },
+            { num: 40, name: "Javier 9º" },
+            { num: 44, name: "Nidia Morales" },
+            { num: 50, name: "Tato (Pago)" },
+            { num: 53, name: "Ingrid Araya" },
+            { num: 61, name: "Magali Aleman" },
+            { num: 62, name: "Magali Aleman" },
+            { num: 63, name: "Magali Aleman" },
+            { num: 64, name: "Magali Aleman" },
+            { num: 67, name: "Vinicio Ordóñez" },
+            { num: 69, name: "Magali Aleman" },
+            { num: 70, name: "Rodrigo Araya" },
+            { num: 77, name: "Nidia Morales" },
+            { num: 78, name: "Victoria" },
+            { num: 80, name: "Luigi" },
+            { num: 83, name: "Ingrid Araya" },
+            { num: 94, name: "Luigi" },
+            { num: 97, name: "Luisa Lerma" },
+            { num: 98, name: "Victoria Ugalde" },
+            { num: 99, name: "Diego" },
+            { num: 108, name: "Diego" },
+            { num: 118, name: "Thiago Morales 8º" },
+            { num: 144, name: "Diego" },
+            { num: 154, name: "Ingrid Araya" },
+            { num: 188, name: "Ingrid Araya" },
+            { num: 190, name: "René Herrera" }
+        ];
+
+        // App State
+        let winners = [];
+        let isDrawing = false;
+        let soundEnabled = true;
+        let currentWinner = null;
+        let rouletteAngle = 0;
+
+        // Web Audio API Synthesizer for sound effects (No external audio files needed!)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playBeep(freq = 440, duration = 0.05, type = 'sine') {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playVictorySound() {
+            if (!soundEnabled) return;
+            const notes = [261.63, 329.63, 392.00, 523.25, 659.25];
+            notes.forEach((freq, idx) => {
+                setTimeout(() => playBeep(freq, 0.2, 'triangle'), idx * 100);
+            });
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-lg text-spooky-orange';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-lg text-gray-500';
+            }
+        }
+
+        // Initialize UI
+        window.onload = function() {
+            renderGrid();
+            initRouletteCanvas();
+            initBackgroundParticles();
+            
+            // Mode switcher listener
+            document.getElementById('drawMode').addEventListener('change', (e) => {
+                const mode = e.target.value;
+                document.getElementById('gridStage').classList.toggle('hidden', mode !== 'scan');
+                document.getElementById('rouletteStage').classList.toggle('hidden', mode !== 'roulette');
+                document.getElementById('slotStage').classList.toggle('hidden', mode !== 'slot');
+                if (mode === 'roulette') drawRouletteWheel();
+            });
+        };
+
+        // Render Cards Grid
+        function renderGrid() {
+            const container = document.getElementById('ticketsGrid');
+            container.innerHTML = '';
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+
+            rawParticipants.forEach(p => {
+                const isWinner = winners.some(w => w.num === p.num);
+                const matchesFilter = p.num.toString().includes(filter) || p.name.toLowerCase().includes(filter);
+                
+                if (!matchesFilter) return;
+
+                const card = document.createElement('div');
+                card.id = `ticket-${p.num}`;
+                card.className = `ticket-card relative p-3 rounded-xl border flex flex-col justify-between select-none ${
+                    isWinner 
+                        ? 'bg-spooky-blood/20 border-spooky-blood text-gray-400 opacity-60' 
+                        : 'bg-spooky-card border-spooky-border hover:border-spooky-purple text-gray-200'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-creep text-2xl ${isWinner ? 'text-spooky-blood' : 'text-spooky-orange'}">#${p.num}</span>
+                        ${isWinner ? '<i class="fa-solid fa-skull text-spooky-blood text-xs"></i>' : '<i class="fa-solid fa-spider text-gray-600 text-xs"></i>'}
+                    </div>
+                    <div class="font-semibold text-xs mt-2 truncate ${isWinner ? 'line-through text-gray-500' : 'text-gray-300'}" title="${p.name}">
+                        ${p.name}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('activeCount').innerText = rawParticipants.length - winners.length;
+        }
+
+        function filterTickets() {
+            renderGrid();
+        }
+
+        // Get Available Pool
+        function getEligiblePool() {
+            const exclude = document.getElementById('excludeWinners').checked;
+            if (exclude) {
+                return rawParticipants.filter(p => !winners.some(w => w.num === p.num));
+            }
+            return [...rawParticipants];
+        }
+
+        // Master Draw Trigger
+        function startDraw() {
+            if (isDrawing) return;
+            const pool = getEligiblePool();
+
+            if (pool.length === 0) {
+                alert('¡Todos los números de la lista ya han sido elegidos!');
+                return;
+            }
+
+            isDrawing = true;
+            document.getElementById('drawBtn').disabled = true;
+
+            const mode = document.getElementById('drawMode').value;
+            const winner = pool[Math.floor(Math.random() * pool.length)];
+            currentWinner = winner;
+
+            if (mode === 'scan') {
+                runScanAnimation(pool, winner);
+            } else if (mode === 'roulette') {
+                runRouletteAnimation(winner);
+            } else if (mode === 'slot') {
+                runSlotAnimation(pool, winner);
+            }
+        }
+
+        // Animation Mode 1: Grid Scan Lightup
+        function runScanAnimation(pool, winner) {
+            let speed = 40;
+            let counter = 0;
+            const totalSteps = 45 + Math.floor(Math.random() * 15);
+            let lastCardId = null;
+
+            function step() {
+                // Remove previous scan highlight
+                if (lastCardId) {
+                    const prevCard = document.getElementById(lastCardId);
+                    if (prevCard && !winners.some(w => `ticket-${w.num}` === lastCardId)) {
+                        prevCard.classList.remove('active-scan');
+                    }
+                }
+
+                counter++;
+                const randomParticipant = counter === totalSteps ? winner : pool[Math.floor(Math.random() * pool.length)];
+                lastCardId = `ticket-${randomParticipant.num}`;
+                
+                const cardEl = document.getElementById(lastCardId);
+                if (cardEl) {
+                    cardEl.classList.add('active-scan');
+                    cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                playBeep(300 + (counter * 8), 0.04);
+
+                if (counter < totalSteps) {
+                    // Decelerate progressively
+                    if (counter > totalSteps - 15) speed += 25;
+                    else if (counter > totalSteps - 8) speed += 50;
+                    setTimeout(step, speed);
+                } else {
+                    // Finish animation
+                    setTimeout(() => {
+                        finishDraw(winner);
+                    }, 500);
+                }
+            }
+
+            step();
+        }
+
+        // Animation Mode 2: Canvas Roulette Spin
+        function runRouletteAnimation(winner) {
+            let currentSpeed = 0.35 + Math.random() * 0.15;
+            const friction = 0.985;
+            
+            function animateWheel() {
+                rouletteAngle += currentSpeed;
+                currentSpeed *= friction;
+                drawRouletteWheel();
+
+                playBeep(200 + (currentSpeed * 1000), 0.03);
+
+                if (currentSpeed > 0.002) {
+                    requestAnimationFrame(animateWheel);
+                } else {
+                    finishDraw(winner);
+                }
+            }
+            animateWheel();
+        }
+
+        // Animation Mode 3: Slot Machine Roll
+        function runSlotAnimation(pool, winner) {
+            let counter = 0;
+            const totalSteps = 40;
+            let speed = 50;
+
+            const slotNumEl = document.getElementById('slotNumber');
+            const slotNameEl = document.getElementById('slotName');
+
+            function stepSlot() {
+                counter++;
+                const temp = pool[Math.floor(Math.random() * pool.length)];
+                
+                slotNumEl.innerText = temp.num;
+                slotNameEl.innerText = temp.name;
+                playBeep(400 + Math.random() * 200, 0.04, 'square');
+
+                if (counter < totalSteps) {
+                    if (counter > totalSteps - 10) speed += 30;
+                    setTimeout(stepSlot, speed);
+                } else {
+                    slotNumEl.innerText = winner.num;
+                    slotNameEl.innerText = winner.name;
+                    finishDraw(winner);
+                }
+            }
+
+            stepSlot();
+        }
+
+        // Finish Draw & Trigger Winner Display
+        function finishDraw(winner) {
+            isDrawing = false;
+            document.getElementById('drawBtn').disabled = false;
+            
+            // Add to Winners
+            if (!winners.some(w => w.num === winner.num)) {
+                winners.unshift(winner);
+            }
+
+            updateWinnersList();
+            renderGrid();
+            playVictorySound();
+            showWinnerModal(winner);
+            triggerSpookyConfetti();
+        }
+
+        // Winner Modal Control
+        function showWinnerModal(winner) {
+            document.getElementById('modalWinnerNumber').innerText = `#${winner.num}`;
+            document.getElementById('modalWinnerName').innerText = winner.name;
+
+            const modal = document.getElementById('winnerModal');
+            const content = document.getElementById('modalContent');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-90');
+            content.classList.add('scale-100');
+        }
+
+        function closeWinnerModal() {
+            const modal = document.getElementById('winnerModal');
+            const content = document.getElementById('modalContent');
+
+            content.classList.remove('scale-100');
+            content.classList.add('scale-90');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function redrawFromModal() {
+            closeWinnerModal();
+            setTimeout(() => {
+                startDraw();
+            }, 300);
+        }
+
+        // Winners Panel Updates
+        function updateWinnersList() {
+            const container = document.getElementById('winnersList');
+            const countEl = document.getElementById('winnersCount');
+            countEl.innerText = winners.length;
+
+            if (winners.length === 0) {
+                container.innerHTML = '<p id="emptyWinnersText" class="text-xs text-gray-500 italic text-center py-4">Aún no hay ganadores invocados...</p>';
+                return;
+            }
+
+            container.innerHTML = winners.map((w, idx) => `
+                <div class="bg-spooky-bg border border-spooky-border p-2.5 rounded-xl flex items-center justify-between animate-fadeIn">
+                    <div class="flex items-center gap-2">
+                        <span class="font-creep text-lg text-spooky-orange">#${w.num}</span>
+                        <span class="font-semibold text-xs text-gray-200">${w.name}</span>
+                    </div>
+                    <span class="text-[10px] bg-spooky-purple/20 text-spooky-purple px-2 py-0.5 rounded-md font-mono">
+                        #${winners.length - idx}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function resetWinners() {
+            if (winners.length === 0) return;
+            if (confirm('¿Deseas reiniciar la lista de ganadores de la rifa?')) {
+                winners = [];
+                updateWinnersList();
+                renderGrid();
+            }
+        }
+
+        // Canvas Halloween Confetti Effect
+        function triggerSpookyConfetti() {
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 60 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                
+                // Orange & Green & Purple Theme Confetti
+                confetti(Object.assign({}, defaults, { 
+                    particleCount, 
+                    origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+                    colors: ['#ff6b00', '#9d4edd', '#00ff66', '#ffd700']
+                }));
+                confetti(Object.assign({}, defaults, { 
+                    particleCount, 
+                    origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+                    colors: ['#ff6b00', '#9d4edd', '#00ff66', '#ffd700']
+                }));
+            }, 250);
+        }
+
+        // Canvas 2D Roulette Renderer
+        function initRouletteCanvas() {
+            drawRouletteWheel();
+        }
+
+        function drawRouletteWheel() {
+            const canvas = document.getElementById('rouletteCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = width / 2 - 10;
+
+            const pool = rawParticipants;
+            const sliceAngle = (Math.PI * 2) / pool.length;
+
+            ctx.clearRect(0, 0, width, height);
+
+            pool.forEach((p, idx) => {
+                const angle = rouletteAngle + idx * sliceAngle;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + sliceAngle);
+                ctx.closePath();
+
+                // Alternating Halloween Colors
+                ctx.fillStyle = idx % 2 === 0 ? '#160d27' : '#2a1745';
+                if (winners.some(w => w.num === p.num)) {
+                    ctx.fillStyle = '#4a0e17'; // Excluded/Winner color
+                }
+                ctx.fill();
+                ctx.strokeStyle = '#ff6b00';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Text
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + sliceAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = idx % 2 === 0 ? '#ff6b00' : '#00ff66';
+                ctx.font = "bold 12px sans-serif";
+                ctx.fillText(`#${p.num}`, radius - 15, 4);
+                ctx.restore();
+            });
+
+            // Center Knob
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff6b00';
+            ctx.fill();
+            ctx.strokeStyle = '#0c0714';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            ctx.fillStyle = '#000';
+            ctx.font = "bold 16px Creepster, cursive";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🎃", centerX, centerY);
+        }
+
+        // Ambient Floating Particles Canvas (Ghosts, Bats, Dust)
+        function initBackgroundParticles() {
+            const canvas = document.getElementById('bgCanvas');
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            const particles = Array.from({ length: 35 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 3 + 1,
+                speedX: (Math.random() - 0.5) * 0.5,
+                speedY: (Math.random() - 0.5) * 0.5 - 0.2,
+                opacity: Math.random() * 0.5 + 0.2,
+                color: Math.random() > 0.5 ? '#ff6b00' : '#9d4edd'
+            }));
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    if (p.x < 0) p.x = canvas.width;
+                    if (p.x > canvas.width) p.x = 0;
+                    if (p.y < 0) p.y = canvas.height;
+                    if (p.y > canvas.height) p.y = 0;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.opacity;
+                    ctx.fill();
+                });
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
